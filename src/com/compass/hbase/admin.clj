@@ -1,13 +1,13 @@
-(ns com.davidsantiago.clojure-hbase.admin
+(ns com.compass.hbase.admin
   (:refer-clojure :rename {get map-get} :exclude [flush])
   (:use clojure.contrib.def
-	com.davidsantiago.clojure-hbase
-	com.davidsantiago.clojure-hbase.internal)
+	com.compass.hbase.admin-utils)
   (:import [org.apache.hadoop.hbase HBaseConfiguration HConstants
 	    HTableDescriptor HColumnDescriptor]
 	   [org.apache.hadoop.hbase.client HBaseAdmin]
 	   [org.apache.hadoop.hbase.util Bytes]
 	   [org.apache.hadoop.hbase.io.hfile Compression]))
+
 
 (defvar- *admin* nil)
 
@@ -54,6 +54,7 @@
 ;;
 ;; HTableDescriptor
 ;;
+
 (defvar- table-desc-argnums
   {:max-file-size         1  ;; :max-file-size <long>
    :mem-store-flush-size  1  ;; :mem-store-flush-size <long>
