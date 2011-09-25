@@ -6,10 +6,10 @@
 	com.compass.hbase.schema)
   (:require [com.compass.hbase.filters :as f])
   (:import org.apache.hadoop.hbase.util.Bytes
-	   org.apache.hadoop.hbase.HBaseConfiguration	   
-	   org.apache.hadoop.conf.Configuration	   
+	   org.apache.hadoop.hbase.HBaseConfiguration
+	   org.apache.hadoop.conf.Configuration
 	   [org.apache.hadoop.hbase.client HTablePool HTable
-	    HTable$ClientScanner Get Put Delete Scan HConnectionManager]
+	    HTable$ClientScanner Get Put Increment Delete Scan HConnectionManager]
 	   [java.util.concurrent ThreadPoolExecutor ArrayBlockingQueue TimeUnit]))
 
 ;; ====================================
@@ -84,7 +84,7 @@
 		(decode-latest schema (.get table g)))))))
   ([table row]
      (get table row nil)))
-      
+
 ;; ==================================
 ;; SINGLE ROW PUT OPERATIONS
 ;; ==================================
@@ -161,8 +161,50 @@
      (with-table [table table]
        (let [schema (table-schema table)]
 	 (do-del table (-> (make-del schema row)
-			   (add-del-column schema family column)))))))
+                       (add-del-column schema family column)))))))
 
+;; =========================================
+;; Increment operation
+
+;; (c/define-schema :items [:defaults [:keyword :long]
+;;                        :row-type :integer]
+;;    :counters [:keyword :long])
+;; (client/increment :items 100 {:counters {:downvote -2 upvote: 1}})
+;; =========================================
+
+(defn- increment-add [#^Increment increment schema family col value]
+  (.addColumn increment
+              (encode-family schema family)
+              (encode-column schema family col)
+              (long value)))
+
+(defn make-increment [schema row values]
+  (let [rowbytes (encode-row schema row)
+        increment (new Increment rowbytes)]
+    (if (map? values)
+      (doseq [[family cols] values]
+        (doseq [[col value] cols]
+          (increment-add increment schema family col value)))
+      (doseq [[family col value] values]
+        (increment-add increment schema family col value)))
+    increment))
+
+(defn increment
+  "Increment data into a row using a value map or a vector sequence:
+   of vectors.  Value maps are {:family {:column value :column value}}
+   and vector in increment are [[family column value] [family column value]]"
+  ([table row values constraints]
+     (with-table [table table]
+       (let [schema (table-schema table)
+             i (make-increment schema row values)]
+         (io! (if (:all-versions constraints)
+                (decode-all schema (.increment table i))
+                (decode-latest schema (.increment table i)))))))
+  ([table row values]
+     (increment table row values nil)))
+
+(defn increment-one [table row family column value]
+  (increment table row [[family column value]]))
 
 ;; =========================================
 ;; Multi Row Get / Put operations
@@ -244,7 +286,7 @@
 	(map (partial decode-latest schema)
 	     (process-batch table gets))))))
 
-	
+
 ;; ==================================
 ;; Scanning
 ;; ==================================
@@ -271,7 +313,7 @@
 	     scan (make-scan schema constraints)
 	     scanner (io! (.getScanner table scan))
 	     decoder (if all? decode-all decode-latest)
-	     results (doall 
+	     results (doall
 		      (keep #(apply fn (decoder schema %))
 			    scanner))]
 	 (.close scanner)
@@ -293,8 +335,8 @@
 	   (apply fn (decode-latest schema result)))
 	 (.close scanner)
 	 nil))))
-		 
-	
+
+
 (defn raw-scan
   "This function collects the scan results without decoding
    The function can filter results by returning nil"
@@ -303,7 +345,7 @@
        (let [schema (get-schema table)
 	     scan (make-scan schema constraints)
 	     scanner (io! (.getScanner table scan))
-	     results (doall 
+	     results (doall
 		      (keep fn scanner))]
 	 (.close scanner)
 	 results))))
@@ -323,4 +365,4 @@
 ;;      (hbase/scanner (as-table table)
 ;; 		    (make-scan filter)))))
 
-	   
+
