@@ -1,15 +1,14 @@
-# clojure-hbase
+# clojure-hbase-schemas
 
-Clojure-HBase is a simple library for accessing HBase conveniently from Clojure.
+Clojure-HBase-Schemas is a simple library for accessing HBase from
+Clojure.  The library was inspired by David Santiago's
+[clojure-hbase](http://github.com/davidsantiago/clojure-hbase) and
+lifts support for HTable admin functions directly from his library.
 
-## Alternate Client API
+## Description
 
-Compass labs has added an alternative client library interface based
-heavily on the original implementation.  HBase administration
-functions can still use the original clojure_hbase.admin.
-
-Two main facilities were introduced, schemas and constraints.  Schemas
-are a simple template for data encoding/decoding when processing HBase
+Two main facilities are introduced: schemas and constraints.  Schemas
+are type templates that dictate data encoding/decoding for HBase
 operations.  Constraints result in method calls on Gets and Scans as
 well as passing appropriate sets of filter objects to the Get/Scan
 operation.
