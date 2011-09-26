@@ -1,11 +1,11 @@
 (ns com.compass.hbase.schema
   (:use [clojure.contrib.seq-utils :only [find-first]]
-	[clojure.contrib.java-utils])
+        [clojure.contrib.java-utils])
   (:import org.apache.hadoop.hbase.util.Bytes)
   (:require [clojure.stacktrace]
-	    [clj-time.core :as time]
-	    [clj-serializer.core :as ser]
-	    [clj-json.core :as json]))
+            [clj-time.core :as time]
+            [clj-serializer.core :as ser]
+            [clj-json.core :as json]))
 
 ;;
 ;; Schema-based translation between HBase byte representations
@@ -23,7 +23,7 @@
 
 (comment
   (define-schema :test-table [:defaults [:string :ser]
-                             :row-type :long]
+                              :row-type :long]
     :family1 {:defaults [:long :string]
               :exceptions {(long 0) :json
                            (long 1) :double}}
@@ -126,20 +126,20 @@
 
 (defonce *schemas* (atom nil))
 (defn- put-schema* [orig name schema] (assoc orig name schema))
-(defn put-schema [name schema]        (swap! *schemas* put-schema* name schema))
-(defn get-schema [name]               (if-let [recs @*schemas*]
-					(recs (keyword name))))
+(defn put-schema [name schema] (swap! *schemas* put-schema* name schema))
+(defn get-schema [name] (if-let [recs @*schemas*]
+                                        (recs (keyword name))))
 
 (defmacro define-schema
   "A convenience macro for systems to use"
   [table-name [& metadata] & family-defs]
   (let [table-name (as-str table-name)]
     `(put-schema '~(keyword table-name)
-		 (make-schema
-		  ~(str table-name)
-		  ~(apply hash-map family-defs)
-		  ~(assoc (apply hash-map metadata)
-		     :table (keyword table-name))))))
+                 (make-schema
+                  ~(str table-name)
+                  ~(apply hash-map family-defs)
+                  ~(assoc (apply hash-map metadata)
+                     :table (keyword table-name))))))
 
 (define-schema :schemas [:defaults [:string :json-key]])
 
@@ -156,8 +156,8 @@
 (defmethod encode-value :keyword [arg type] (Bytes/toBytes (as-str arg)))
 (defmethod encode-value :symbol [arg type] (Bytes/toBytes (as-str arg)))
 (defmethod encode-value :string [arg type]
-	   (assert (or (symbol? arg) (keyword? arg) (string? arg)))
-	   (Bytes/toBytes (as-str arg)))
+  (assert (or (symbol? arg) (keyword? arg) (string? arg)))
+  (Bytes/toBytes (as-str arg)))
 (defmethod encode-value :bool [arg type] (Bytes/toBytes (boolean arg)))
 (defmethod encode-value :long [arg type] (Bytes/toBytes (long arg)))
 (defmethod encode-value :int [arg type] (Bytes/toBytes (int arg)))
