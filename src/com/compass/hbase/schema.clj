@@ -22,12 +22,12 @@
 ;; - Allow specific qualifiers to have a different value type (exceptions)
 
 (comment
-  (def define-schema test-table [:defaults [:string :ser]
-				 :row-type :long]
-       :family1 {:defaults [:long :string]
-		 :exceptions {(long 0) :json
-			      (long 1) :double}}
-       :family2 {:defaults [:long :json]}))
+  (define-schema test-table [:defaults [:string :ser]
+                             :row-type :long]
+    :family1 {:defaults [:long :string]
+              :exceptions {(long 0) :json
+                           (long 1) :double}}
+    :family2 {:defaults [:long :json]}))
 
 (defrecord hbase-schema [name metadata families])
 
@@ -41,7 +41,7 @@
 
 ;;
 ;; Schema accessors
-;; 
+;;
 
 (def *qualifier-default* :string)
 (def *value-default* :json)
@@ -75,7 +75,7 @@
     (if-let [def (schema-metadata schema :defaults)]
       (first def)
       *qualifier-default*)))
-	     
+
 (defn- value-type
   [schema family qualifier]
   (check-schema schema)
@@ -219,7 +219,7 @@
 	     (recur (next kvs)
 		    (assoc-in kv-map [family qualifier timestamp] value)))
 	   kv-map)))]))
-			      
+
 (defn decode-latest
   "Given an HBase Result object, decode the latest versions of all the
    available columns"
