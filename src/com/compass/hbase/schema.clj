@@ -98,8 +98,8 @@
    same serialization type"
   [schema family]
   (check-schema schema)
-  (if-let [fam (schema-family schema family)]
-    (first fam)
+  (if-let [fam-defaults (:defaults (schema-family schema family))]
+    (first fam-defaults)
     (if-let [def (schema-metadata schema :defaults)]
       (first def)
       *qualifier-default*)))
@@ -185,6 +185,8 @@
   (encode-value family :string))
 
 (defn encode-column [schema family column]
+  (println schema family column (qualifier-type schema family))
+
   (encode-value column (qualifier-type schema family)))
 
 (defn encode-cell [schema family column value]
