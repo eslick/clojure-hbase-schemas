@@ -1,7 +1,7 @@
 (ns com.compass.hbase.admin
   (:refer-clojure :rename {get map-get} :exclude [flush])
   (:use clojure.contrib.def
-	com.compass.hbase.admin-utils)
+        [com.compass.hbase.admin-utils])
   (:import [org.apache.hadoop.hbase HBaseConfiguration HConstants
 	    HTableDescriptor HColumnDescriptor]
 	   [org.apache.hadoop.hbase.client HBaseAdmin]
