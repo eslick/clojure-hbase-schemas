@@ -1,8 +1,7 @@
-(ns clojure-hbase-test
+(ns com.compass.hbase.test.core
   (:refer-clojure :rename {get map-get})
   (:use clojure.test
-	[com.davidsantiago.clojure-hbase]
-	[com.davidsantiago.clojure-hbase.admin :exclude [flush]])
+        [com.compass.hbase client admin schema admin-utils])
   (:import [org.apache.hadoop.hbase.util Bytes]
 	   [java.util UUID]))
 

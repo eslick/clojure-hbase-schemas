@@ -61,5 +61,7 @@
   ;; default
   java.lang.Object
   (to-bytes [value]
+    (println value)
+
     (Bytes/toBytes value)))
 
