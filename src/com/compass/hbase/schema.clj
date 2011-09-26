@@ -22,7 +22,7 @@
 ;; - Allow specific qualifiers to have a different value type (exceptions)
 
 (comment
-  (define-schema test-table [:defaults [:string :ser]
+  (define-schema :test-table [:defaults [:string :ser]
                              :row-type :long]
     :family1 {:defaults [:long :string]
               :exceptions {(long 0) :json
@@ -34,10 +34,38 @@
 (defmethod print-method hbase-schema [schema writer]
   (.write writer (format "#<schema %s>" (:name schema))))
 
+(defn make-exceptions-decode-map
+  [exceptions]
+  (reduce (fn [exceptions-map
+               [qualifier val-type]]
+            (assoc exceptions-map
+              (-> qualifier
+                  Bytes/toBytes
+                  java.util.Arrays/hashCode)
+              [qualifier val-type])
+            ) {} exceptions))
+
+(defn wrap-schema-exceptions-map
+  "Add a new map to the schema to allow us to retrieve the types of
+   :exception qualifiers and values. the map will have qualifier bytes
+   arrays as hashcode for key and the value will be a vector with the schema key
+   in it s original form and the corresponding value type."
+  [families]
+  (reduce (fn [families
+               [family-key family-value]]
+            (assoc families
+              family-key
+              (if-let [exceptions (:exceptions family-value)]
+                (assoc family-value :exceptions-decode-map
+                       (make-exceptions-decode-map exceptions))
+                family-value)))
+          {}
+          families))
+
 (defn make-schema
   "Families is a map of family names to type definitions"
   [name families metadata]
-  (hbase-schema. name metadata families))
+  (hbase-schema. name metadata (wrap-schema-exceptions-map families)))
 
 ;;
 ;; Schema accessors
@@ -79,11 +107,13 @@
 (defn- value-type
   [schema family qualifier]
   (check-schema schema)
-  (if-let [fam (schema-family schema family)]
-    (second fam)
-    (if-let [def (schema-metadata schema :defaults)]
-      (second def)
-      *value-default*)))
+  (let [fam (schema-family schema family)]
+    (or  (get-in fam
+                 [:exceptions qualifier] ;; in exception first
+                 (-> fam :defaults second))
+         (if-let [def (schema-metadata schema :defaults)]
+           (second def)
+           *value-default*))))
 
 (defn row-type
   [schema]
@@ -144,7 +174,9 @@
 
 ;;
 ;; Schema-guided encoding
-;;
+
+;; Possible improvement would be to define our
+;; own types instead of kw and use a protocol for this
 
 (defn encode-row [schema row]
   (encode-value row (row-type schema)))
@@ -194,6 +226,21 @@
   (with-robust-decode [:row result]
     (decode-value (.getRow result) (row-type schema))))
 
+(defn decode-cell
+  "Return a vector containing decoded key and value type"
+  [schema family raw-qualifier]
+  (let [fam (schema-family schema family)
+        cf-exceptions-decode-map (:exceptions-decode-map fam)]
+    ;; either we have an exception map  and a valid decoded value or
+    ;; we fallback to cf defaults, or schema defaults or lib defaults
+    ;; as last resort.
+    (or (and cf-exceptions-decode-map
+             (get cf-exceptions-decode-map (java.util.Arrays/hashCode raw-qualifier)))
+        (let [types (or (:defaults fam)
+                        (schema-metadata schema :defaults)
+                        [*qualifier-default* *value-default*])]
+          [(decode-value raw-qualifier (first types)) (second types)]))))
+
 (defn decode-all
   "Given an HBase Result object, decode all the versions such that for each
    family and column there is a map of timestamp and values for historical versions"
@@ -204,21 +251,22 @@
     [(with-robust-decode [:row result]
        (decode-row schema result))
      (loop [kvs (.raw result)
-	    kv-map {}]
+            kv-map {}]
        (with-robust-decode [:value result]
-	 (if-let [kv (first kvs)]
-	   (let [family (decode-value (.getFamily kv) :keyword)
-		 qualifier (decode-value (.getQualifier kv)
-					 (qualifier-type schema family))
-		 timestamp (.getTimestamp kv)
-		 value (let [value (.getValue kv)]
-			 (if (> (count value) 0)
-			   (decode-value (.getValue kv)
-					 (value-type schema family qualifier))
-			   nil))]
-	     (recur (next kvs)
-		    (assoc-in kv-map [family qualifier timestamp] value)))
-	   kv-map)))]))
+         (if-let [kv (first kvs)]
+           (let [family (decode-value (.getFamily kv) :keyword)
+                 timestamp (.getTimestamp kv)
+                 [qualifier val-type] (decode-cell schema
+                                                   family
+                                                   (.getQualifier kv))
+                 value (let [raw-value (.getValue kv)]
+                         (if (> (count raw-value) 0)
+                           (decode-value raw-value
+                                         val-type)
+                           nil))]
+             (recur (next kvs)
+                    (assoc-in kv-map [family qualifier timestamp] value)))
+           kv-map)))]))
 
 (defn decode-latest
   "Given an HBase Result object, decode the latest versions of all the
@@ -230,24 +278,26 @@
     [(with-robust-decode [:row result]
        (decode-row schema result))
      (loop [remaining-kvs (seq (.raw result))
-	    keys #{}]
+            keys #{}]
        (with-robust-decode [:value result]
-	 (if-let [kv (first remaining-kvs)]
-	   (let [family    (.getFamily kv)
-		 qualifier (.getQualifier kv)]
-	     (recur (next remaining-kvs)
-		    (conj keys [family qualifier])))
-	   ;; At this point, we have a duplicate-less list of [f q] keys in keys.
-	   ;; Go back through, pulling the latest values for these keys.
-	   (loop [remaining-keys keys
-		  kv-map {}]
-	     (if-let [[family qualifier] (first remaining-keys)]
-	       (let [keyfam (decode-value family :keyword)
-		     qual (decode-value qualifier (qualifier-type schema keyfam))]
-		 (recur (next remaining-keys)
-			(assoc-in kv-map [keyfam qual]
-				  (let [value (.getValue result family qualifier)]
-				    (if (> (count value) 0)
-				      (decode-value value (value-type schema keyfam qual))
-				      nil)))))
-	       kv-map)))))]))
+         (if-let [kv (first remaining-kvs)]
+           (let [family    (.getFamily kv)
+                 qualifier (.getQualifier kv)]
+             (recur (next remaining-kvs)
+                    (conj keys [family qualifier])))
+           ;; At this point, we have a duplicate-less list of [f q] keys in keys.
+           ;; Go back through, pulling the latest values for these keys.
+           (loop [remaining-keys keys
+                  kv-map {}]
+             (if-let [[family qualifier] (first remaining-keys)]
+               (let [keyfam (decode-value family :keyword)
+                     [qual val-type] (decode-cell schema
+                                                  keyfam
+                                                  qualifier)]
+                 (recur (next remaining-keys)
+                        (assoc-in kv-map [keyfam qual]
+                                  (let [value (.getValue result family qualifier)]
+                                    (if (> (count value) 0)
+                                      (decode-value value val-type)
+                                      nil)))))
+               kv-map)))))]))
