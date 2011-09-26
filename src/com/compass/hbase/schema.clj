@@ -185,8 +185,6 @@
   (encode-value family :string))
 
 (defn encode-column [schema family column]
-  (println schema family column (qualifier-type schema family))
-
   (encode-value column (qualifier-type schema family)))
 
 (defn encode-cell [schema family column value]
