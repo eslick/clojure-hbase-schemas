@@ -13,7 +13,7 @@
    command keyword followed by args."
   [query cmd-argnum-map]
   (loop [result []
-	 remaining-commands query]0
+	 remaining-commands query]
     (let [kw (first remaining-commands)]
       (if (nil? kw)
 	result
