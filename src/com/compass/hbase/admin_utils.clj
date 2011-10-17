@@ -1,8 +1,10 @@
 (ns com.compass.hbase.admin-utils
   (:refer-clojure :rename {get map-get})
-  (:use clojure.contrib.def))
+  (:use clojure.contrib.def
+	[clojure.contrib.java-utils])
+  (:import [org.apache.hadoop.hbase.util Bytes]))
 
-;; Utility funciton
+;; Utility function
 
 (defn partition-query
   "Given a query sequence and a command argnum map (each keyword in map

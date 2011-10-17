@@ -8,7 +8,6 @@
 	   [org.apache.hadoop.hbase.util Bytes]
 	   [org.apache.hadoop.hbase.io.hfile Compression]))
 
-
 (defvar- *admin* nil)
 
 (defn get-admin
