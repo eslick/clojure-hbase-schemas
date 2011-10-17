@@ -9,7 +9,6 @@
 		 [org.apache/zookeeper "3.3.2"]
 		 [clj-time "0.3.0"]
 		 [clj-serializer "0.1.1"]
-                 [clj-json "0.3.1"]
 		 [log4j/log4j "1.2.15" :exclusions [javax.mail/mail
 						    javax.jms/jms
 						    com.sun.jdmk/jmxtools
