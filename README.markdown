@@ -24,16 +24,32 @@ operation.
 
 Define a schema for a table called users with two column families,
 userinfo and friends. The first seq after the table name is metadata.
-:default determines the default data type for qualifiers and values in
-any column family not already defined in the schema.  The :row-type is
-also defined.  The remainder of the definition consists of qualifier
-and value types for each column family.
+:key-type and :value-type determines the default data type for
+qualifiers and values in any column family not already defined in the
+schema.  The :row-type must be defined.  The remainder of the
+definition consists of type specification for the other families where
+not covered by the defaults.  The framework has global defaults of a
+String row type, a Keyword qualifier type and a JSON value type.
 
-    (define-schema :users [:defaults [:string :json-key]
+Families are specified using two formats: a map with key, value and
+specific qualifier exceptions or a seq of two values, the key and
+value types.  If one or more are not specified, the table or global
+defaults will be used.
+
+    (define-schema :users [:key-type :string 
+                           :value-type :json-key
     	       	           :row-type :long]
-       :userinfo [:keyword :json-key]
+       :userinfo {:value-type :json-key
+                  :exceptions {:age :int
+		               :name :string}}
        :friends [:long :bool]
        :votes [:keyword :long])
+
+Legal types are :bool, :int, :long, :string, :symbol, :keyword, :ser,
+:json and :json-key.  :ser uses the clj-serializer library to
+ser/deser clojure data structures and :json and :json-key store data
+as JSON binary strings and deserialize to string-based clojure maps or
+keyword-based clojure maps using the default clojure JSON library.
 
 ### Client API
 

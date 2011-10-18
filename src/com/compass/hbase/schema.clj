@@ -17,17 +17,19 @@
 ;; - Qualifiers can be anything, but default to strings (not keywords)
 ;; - Values, of course, can be anything and default to strings
 ;; - Timestamps are Java longs
-
-;; TODO
-;; - Allow specific qualifiers to have a different value type (exceptions)
+;; - Exceptions map specific keys to a value type for deser.
+;;   this only works for column families where all qualifiers have the same type
+;;   because they have to be decoded prior to the lookup
 
 (comment
-  (def define-schema test-table [:defaults [:string :ser]
-				 :row-type :long]
-       :family1 {:defaults [:long :string]
-		 :exceptions {(long 0) :json
-			      (long 1) :double}}
-       :family2 {:defaults [:long :json]}))
+  (def define-schema test-table [:row-type :long
+				 :key-type :string
+				 :value-type :json-key]
+    :family1 {:key-type :long
+	      :value-type :string
+	      :exceptions {(long 0) :json
+			   (long 1) :double}}
+    :family2 {:value-type :json}))
 
 (defrecord hbase-schema [name metadata families])
 
@@ -43,15 +45,14 @@
 ;; Schema accessors
 ;; 
 
-(def *qualifier-default* :string)
+(def *row-default* :string)
+(def *qualifier-default* :keyword)
 (def *value-default* :json)
-(def *row-default* :long)
-(def *valid-types* [:bool :int :long :string :symbol :keyword :ser :json]) ;; :bson :avro?
+(def *valid-types* [:bool :int :long :string :symbol :keyword :ser :json :json-key])
 
 (defn check-schema [schema]
   (when (not (and (map? schema) (:metadata schema)))
     (throw (java.lang.Error. (format "Invalid schema: %s" schema)))))
-
 
 (defn- schema-metadata
   "Get metadata for a schema"
@@ -70,20 +71,23 @@
    same serialization type"
   [schema family]
   (check-schema schema)
-  (if-let [fam (schema-family schema family)]
-    (first fam)
-    (if-let [def (schema-metadata schema :defaults)]
-      (first def)
+  (if-let [type (:key-type (schema-family schema family))]
+    type
+    (if-let [type (schema-metadata schema :key-type)]
+      type
       *qualifier-default*)))
 	     
+(defn- family-value-type [family qualifier]
+  (or (and (:exceptions family) 
+	   ((:exceptions family) qualifier))
+      (:value-type family)))
+   
 (defn- value-type
   [schema family qualifier]
   (check-schema schema)
-  (if-let [fam (schema-family schema family)]
-    (second fam)
-    (if-let [def (schema-metadata schema :defaults)]
-      (second def)
-      *value-default*)))
+  (or (family-value-type (schema-family schema family) qualifier)
+      (schema-metadata schema :value-type)
+      *value-default*))
 
 (defn row-type
   [schema]
@@ -100,6 +104,21 @@
 (defn get-schema [name]               (if-let [recs @*schemas*]
 					(recs (keyword name))))
 
+(defn canonical-family-spec [fams [fam fspec]]
+  (assert (or (keyword? fam) (string? fam)))
+  (cond (map? fspec)
+	(do (assert (every? #{:key-type :value-type :exceptions} (keys fspec)))
+	    (assoc fams fam fspec))
+	(and (sequential? fspec) (= (count fspec) 2))
+	(assoc fams
+	  fam {:key-type (first fspec)
+	       :value-type (second fspec)})
+	true (throw (java.lang.Error.
+		     (str "Unknown family " fspec " for family " fam)))))
+  
+(defn canonical-families [spec]
+  (reduce canonical-family-spec (hash-map) (partition 2 spec)))
+
 (defmacro define-schema
   "A convenience macro for systems to use"
   [table-name [& metadata] & family-defs]
@@ -107,11 +126,13 @@
     `(put-schema '~(keyword table-name)
 		 (make-schema
 		  ~(str table-name)
-		  ~(apply hash-map family-defs)
+		  ~(canonical-families family-defs)
 		  ~(assoc (apply hash-map metadata)
 		     :table (keyword table-name))))))
 
-(define-schema :schemas [:defaults [:string :json-key]])
+(define-schema :schemas [:row-type :keyword
+			 :key-type :string
+			 :value-type :json-key])
 
 ;;
 ;; Schema-guided encoding for HBase
