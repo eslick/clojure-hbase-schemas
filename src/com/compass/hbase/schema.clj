@@ -5,7 +5,7 @@
   (:require [clojure.stacktrace]
 	    [clj-time.core :as time]
 	    [clj-serializer.core :as ser]
-	    [clojure.contrib.json :as json]))
+	    [cheshire.core :as json]))
 
 ;;
 ;; Schema-based translation between HBase byte representations
@@ -158,8 +158,8 @@
 
 ;; Aggregates
 (defmethod encode-value :ser [arg type] (ser/serialize arg))
-(defmethod encode-value :json [arg type] (Bytes/toBytes (json/json-str arg)))
-(defmethod encode-value :json-key [arg type] (Bytes/toBytes (json/json-str arg)))
+(defmethod encode-value :json [arg type] (Bytes/toBytes (json/generate-string arg)))
+(defmethod encode-value :json-key [arg type] (Bytes/toBytes (json/generate-string arg)))
 
 (defmethod encode-value :default [arg] (assert false))
 
@@ -200,8 +200,8 @@
 
 ;; Aggregate data methods
 (defmethod decode-value :ser [bytes type] (ser/deserialize bytes nil))
-(defmethod decode-value :json [bytes type] (json/read-json (Bytes/toString bytes) nil))
-(defmethod decode-value :json-key [bytes type] (json/read-json (Bytes/toString bytes) true))
+(defmethod decode-value :json [bytes type] (json/parse-string (Bytes/toString bytes) nil))
+(defmethod decode-value :json-key [bytes type] (json/parse-string (Bytes/toString bytes) true))
 
 (defmacro with-robust-decode [[type result] & body]
   `(try
