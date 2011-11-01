@@ -176,7 +176,8 @@
 	  (:>= >= '>=) CompareFilter$CompareOp/GREATER_OR_EQUAL
 	  (:<= <= '<=) CompareFilter$CompareOp/LESS_OR_EQUAL
 	  (:< < '<) CompareFilter$CompareOp/LESS
-	  (:not= not= 'not=) CompareFilter$CompareOp/NOT_EQUAL)))
+	  (:not= not= 'not=) CompareFilter$CompareOp/NOT_EQUAL
+	  (:nop nop 'nop) CompareFilter$CompareOp/NO_OP)))
 
 (defn as-comparator [compare value]
   (if (vector? compare)
