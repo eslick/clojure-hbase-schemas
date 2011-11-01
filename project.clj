@@ -1,4 +1,4 @@
-(defproject com.compasslabs/clojure-hbase-schemas "0.90.4.1"
+(defproject com.compasslabs/clojure-hbase-schemas "0.90.4"
   :description "A convenient Clojure interface to HBase."
   :license "See LICENSE file"
   :url "http://github.com/compasslabs/clojure-hbase-schemas"
@@ -9,7 +9,6 @@
 		 [org.apache/zookeeper "3.3.2"]
 		 [clj-time "0.3.0"]
 		 [clj-serializer "0.1.1"]
-		 [cheshire "2.0.2"]
 		 [log4j/log4j "1.2.15" :exclusions [javax.mail/mail
 						    javax.jms/jms
 						    com.sun.jdmk/jmxtools
