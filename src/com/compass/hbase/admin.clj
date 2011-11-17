@@ -23,6 +23,8 @@
 ;;
 
 (def column-desc-argnums
+  "This maps each get command to its number of arguments, for helping us
+   partition the command sequence."
   {:block-cache-enabled      1  ;; :block-cache-enabled <boolean>
    :block-size               1  ;; :block-size <int>
    :bloom-filter             1  ;; :bloom-filter <boolean>
@@ -30,9 +32,7 @@
    :in-memory                1  ;; :in-memory <boolean>
    :map-file-index-interval  1  ;; :map-file-index-interval <int>
    :max-versions             1  ;; :max-versions <int>
-   :time-to-live             1} ;; :time-to-live <int>
-  "This maps each get command to its number of arguments, for helping us
-   partition the command sequence.")
+   :time-to-live             1});; :time-to-live <int>
 
 (defn column-descriptor
   [family-name & args]
@@ -55,12 +55,12 @@
 ;;
 
 (def table-desc-argnums
+  "This maps each get command to its number of arguments, for helping us
+   partition the command sequence."
   {:max-file-size         1  ;; :max-file-size <long>
    :mem-store-flush-size  1  ;; :mem-store-flush-size <long>
    :read-only             1  ;; :read-only <boolean>
-   :family                1} ;; :family <HColumnDescriptor>
-  "This maps each get command to its number of arguments, for helping us
-   partition the command sequence.")
+   :family                1}) ;; :family <HColumnDescriptor>
 
 (defn table-descriptor
   [table-name & args]
