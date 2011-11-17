@@ -1,7 +1,5 @@
 (ns com.compass.hbase.admin-utils
   (:refer-clojure :rename {get map-get})
-  (:use clojure.contrib.def
-	[clojure.contrib.java-utils])
   (:import [org.apache.hadoop.hbase.util Bytes]))
 
 ;; Utility function
@@ -33,10 +31,10 @@
   arg)
 (defmethod to-bytes-impl clojure.lang.Keyword
   [arg]
-  (Bytes/toBytes (as-str arg)))
+  (Bytes/toBytes (name arg)))
 (defmethod to-bytes-impl clojure.lang.Symbol
   [arg]
-  (Bytes/toBytes (as-str arg)))
+  (Bytes/toBytes (name arg)))
 (defmethod to-bytes-impl clojure.lang.IPersistentList
   [arg]
   (Bytes/toBytes (binding [*print-dup* false] (pr-str arg))))

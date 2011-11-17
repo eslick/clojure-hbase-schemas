@@ -8,7 +8,7 @@
 	   [org.apache.hadoop.hbase.util Bytes]
 	   [org.apache.hadoop.hbase.io.hfile Compression]))
 
-(defvar- *admin* nil)
+(def ^:dynamic *admin* nil)
 
 (defn get-admin
   "Enforce a lazy create-once policy"
@@ -22,7 +22,7 @@
 ;; HColumnDescriptor
 ;;
 
-(defvar- column-desc-argnums
+(def column-desc-argnums
   {:block-cache-enabled      1  ;; :block-cache-enabled <boolean>
    :block-size               1  ;; :block-size <int>
    :bloom-filter             1  ;; :bloom-filter <boolean>
@@ -54,7 +54,7 @@
 ;; HTableDescriptor
 ;;
 
-(defvar- table-desc-argnums
+(def table-desc-argnums
   {:max-file-size         1  ;; :max-file-size <long>
    :mem-store-flush-size  1  ;; :mem-store-flush-size <long>
    :read-only             1  ;; :read-only <boolean>

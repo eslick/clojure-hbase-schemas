@@ -1,11 +1,9 @@
 (ns com.compass.hbase.schema
-  (:use [clojure.contrib.seq-utils :only [find-first]]
-	[clojure.contrib.java-utils])
   (:import org.apache.hadoop.hbase.util.Bytes)
   (:require [clojure.stacktrace]
+;;	    [clj-serializer.core :as ser]
 	    [clj-time.core :as time]
-	    [clj-serializer.core :as ser]
-	    [clojure.contrib.json :as json]))
+	    [clojure.data.json :as json]))
 
 ;;
 ;; Schema-based translation between HBase byte representations
@@ -45,10 +43,10 @@
 ;; Schema accessors
 ;; 
 
-(def *row-default* :string)
-(def *qualifier-default* :keyword)
-(def *value-default* :json)
-(def *valid-types* [:bool :int :long :string :symbol :keyword :ser :json :json-key])
+(def row-default :string)
+(def qualifier-default :keyword)
+(def value-default :json)
+(def valid-types [:bool :int :long :string :symbol :keyword :ser :json :json-key])
 
 (defn check-schema [schema]
   (when (not (and (map? schema) (:metadata schema)))
@@ -75,7 +73,7 @@
     type
     (if-let [type (schema-metadata schema :key-type)]
       type
-      *qualifier-default*)))
+      qualifier-default)))
 	     
 (defn- family-value-type [family qualifier]
   (or (and (:exceptions family) 
@@ -87,7 +85,7 @@
   (check-schema schema)
   (or (family-value-type (schema-family schema family) qualifier)
       (schema-metadata schema :value-type)
-      *value-default*))
+      value-default))
 
 (defn row-type
   [schema]
@@ -98,10 +96,10 @@
 ;; Define and cache schemas for convenience
 ;;
 
-(defonce *schemas* (atom nil))
+(defonce schemas (atom nil))
 (defn- put-schema* [orig name schema] (assoc orig name schema))
-(defn put-schema [name schema]        (swap! *schemas* put-schema* name schema))
-(defn get-schema [name]               (if-let [recs @*schemas*]
+(defn put-schema [name schema]        (swap! schemas put-schema* name schema))
+(defn get-schema [name]               (if-let [recs @schemas]
 					(recs (keyword name))))
 
 (defn- matching-type? [rtype vtype]
@@ -141,7 +139,7 @@
 (defmacro define-schema
   "A convenience macro for systems to use"
   [table-name [& metadata] & family-defs]
-  (let [table-name (as-str table-name)]
+  (let [table-name (name table-name)]
     `(put-schema '~(keyword table-name)
 		 (make-schema
 		  ~(str table-name)
@@ -163,11 +161,11 @@
   (fn [value type] type))
 
 ;; Primitives
-(defmethod encode-value :keyword [arg type] (Bytes/toBytes (as-str arg)))
-(defmethod encode-value :symbol [arg type] (Bytes/toBytes (as-str arg)))
+(defmethod encode-value :keyword [arg type] (Bytes/toBytes (name arg)))
+(defmethod encode-value :symbol [arg type] (Bytes/toBytes (name arg)))
 (defmethod encode-value :string [arg type]
 	   (assert (or (symbol? arg) (keyword? arg) (string? arg)))
-	   (Bytes/toBytes (as-str arg)))
+	   (Bytes/toBytes (name arg)))
 (defmethod encode-value :bool [arg type] (Bytes/toBytes (boolean arg)))
 (defmethod encode-value :long [arg type] (Bytes/toBytes (long arg)))
 (defmethod encode-value :int [arg type] (Bytes/toBytes (int arg)))
@@ -176,7 +174,7 @@
 (defmethod encode-value :raw [arg type] arg)
 
 ;; Aggregates
-(defmethod encode-value :ser [arg type] (ser/serialize arg))
+;;(defmethod encode-value :ser [arg type] (ser/serialize arg))
 (defmethod encode-value :json [arg type] (Bytes/toBytes (json/json-str arg)))
 (defmethod encode-value :json-key [arg type] (Bytes/toBytes (json/json-str arg)))
 
@@ -218,7 +216,7 @@
 (defmethod decode-value :raw [bytes type] bytes)
 
 ;; Aggregate data methods
-(defmethod decode-value :ser [bytes type] (ser/deserialize bytes nil))
+;;(defmethod decode-value :ser [bytes type] (ser/deserialize bytes nil))
 (defmethod decode-value :json [bytes type] (json/read-json (Bytes/toString bytes) nil))
 (defmethod decode-value :json-key [bytes type] (json/read-json (Bytes/toString bytes) true))
 

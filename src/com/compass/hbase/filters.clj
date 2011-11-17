@@ -193,7 +193,7 @@
 (defmethod make-filter :default
   [schema [type & rest]]
   (println "Unrecognized filter option " type)
-  (throw (clojure.contrib.condition.Condition. "Bad option")))
+  (throw (java.lang.Error. "Bad option")))
 
 (defmethod make-filter :row
   [schema [type [compare row-value]]]

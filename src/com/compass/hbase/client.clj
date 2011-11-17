@@ -2,7 +2,6 @@
   (:refer-clojure :exclude [get])
   (:use [clojure.contrib.seq-utils :only [find-first]]
 	clojure.contrib.java-utils
-	clojure.contrib.def
 	com.compass.hbase.schema)
   (:require [com.compass.hbase.filters :as f])
   (:import org.apache.hadoop.hbase.util.Bytes
@@ -16,7 +15,7 @@
 ;; Connections
 ;; ====================================
 
-(defvar- *configuration* (HBaseConfiguration/create))
+(def ^:dynamic *configuration* (HBaseConfiguration/create))
 
 (defn- get-connection []
   (HConnectionManager/getConnection *configuration*))
@@ -25,11 +24,12 @@
 ;; Tables
 ;; ====================================
 
-(defvar- *db* (atom nil)
+(def ^:dynamic *db* 
   "This holds the HTablePool reference for all users. Users never have to see
    this, and the HBase API does not appear to me to allow configuration in code
    nor the use of multiple databases simultaneously (configuration is driven by
-   the XML config files). So we just hide this detail from the user.)")
+   the XML config files). So we just hide this detail from the user.)"
+  (atom nil))
 
 (defn table-pool []
   (if-let [pool @*db*]
