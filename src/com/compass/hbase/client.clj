@@ -1,8 +1,6 @@
 (ns com.compass.hbase.client
   (:refer-clojure :exclude [get])
-  (:use [clojure.contrib.seq-utils :only [find-first]]
-	clojure.contrib.java-utils
-	com.compass.hbase.schema)
+  (:use com.compass.hbase.schema)
   (:require [com.compass.hbase.filters :as f])
   (:import org.apache.hadoop.hbase.util.Bytes
 	   org.apache.hadoop.hbase.HBaseConfiguration
