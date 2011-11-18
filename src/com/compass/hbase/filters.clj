@@ -53,7 +53,7 @@
   (project [this type values]
 	  "Restrict the nature of a given row result"))
 
-(def *project-specifiers*
+(def project-specifiers
      #{:families :row-range :columns :timestamp :timerange :max-versions})
 
 (defrecord HBaseConstraints [projections filters page all-versions]
@@ -61,7 +61,7 @@
   (project [#^HBaseConstraints this specifier values]
 	  (if (= specifier :all-versions)
 	    (assoc this :all-versions true)
-	    (do (assert (contains? *project-specifiers* specifier))
+	    (do (assert (contains? project-specifiers specifier))
 		(assoc-in this [:projections specifier] values))))
   (filter [#^HBaseConstraints this type compare value-spec] 
 	  (assert (not (get-in this [:filters type])))

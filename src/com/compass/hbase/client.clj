@@ -24,7 +24,7 @@
 ;; Tables
 ;; ====================================
 
-(def ^:dynamic *db* 
+(def db
   "This holds the HTablePool reference for all users. Users never have to see
    this, and the HBase API does not appear to me to allow configuration in code
    nor the use of multiple databases simultaneously (configuration is driven by
@@ -32,9 +32,9 @@
   (atom nil))
 
 (defn table-pool []
-  (if-let [pool @*db*]
+  (if-let [pool @db]
     pool
-    (swap! *db* (fn [_] (HTablePool.)))))
+    (swap! db (fn [_] (HTablePool.)))))
 
 (defn table
   "Gets an HTable from the open HTablePool by name."
@@ -210,16 +210,16 @@
 ;; Multi Row Get / Put operations
 ;; =========================================
 
-(def *multi-action-executor* (atom nil))
+(def multi-action-executor (atom nil))
 
 (defn- get-action-executor []
-  (if-let [exec @*multi-action-executor*]
+  (if-let [exec @multi-action-executor]
     exec
     (let [start-pool 10
 	  max-pool 20
 	  keepalive 60
 	  queue (ArrayBlockingQueue. 40)]
-      (swap! *multi-action-executor*
+      (swap! multi-action-executor
 	     (fn [a e] e)
 	     (ThreadPoolExecutor. start-pool max-pool keepalive
 				  TimeUnit/SECONDS queue)))))
@@ -296,11 +296,11 @@
 ;; 2) Return all the elements
 ;; 3) Procedural filtering elements
 
-(def *cache-block-size* 100)
+(def cache-block-size 100)
 
 (defn make-scan [schema constraints]
   (let [scan (Scan.)]
-    (.setCaching scan *cache-block-size*)
+    (.setCaching scan cache-block-size)
     (f/constrain-op scan schema constraints)))
 
 (defn scan

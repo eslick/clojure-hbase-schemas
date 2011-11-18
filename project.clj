@@ -5,7 +5,7 @@
   :dependencies [[org.clojure/clojure "1.3.0"]
 		 [org.apache.hadoop/hadoop-core "0.20.2-dev"]
 		 [org.apache.hbase/hbase "0.90.4"]
-		 [org.apache/zookeeper "3.3.2"]
+		 [org.apache.zookeeper/zookeeper "3.3.2-CDH3B4"]
 		 [clj-time "0.3.2"]
 		 [clj-serializer "0.1.1"]
 		 [log4j/log4j "1.2.15" :exclusions [javax.mail/mail
