@@ -41,10 +41,9 @@
    (.getTable (table-pool) (encode-value table-name :string))))
 
 (defn as-table [ref]
-  (cond (string? ref) (table ref)
-	(symbol? ref) (table (as-str ref))
-	(keyword? ref) (table (as-str ref))
-	(= (type ref) HTable) ref))
+  (if (= (type ref) HTable)
+    ref
+    (table (name ref))))
 
 (defn- release-table [table]
   (io! (.putTable (table-pool) table)))
