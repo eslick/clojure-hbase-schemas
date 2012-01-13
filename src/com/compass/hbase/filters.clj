@@ -64,10 +64,9 @@
 	    (do (assert (contains? project-specifiers specifier))
 		(assoc-in this [:projections specifier] values))))
   (filter [#^HBaseConstraints this type compare value-spec] 
-	  (assert (not (get-in this [:filters type])))
-	  (assoc-in this [:filters type] [compare value-spec]))
+          (assoc this :filters (conj (:filters this) [type [compare value-spec]])))
   (filter [#^HBaseConstraints this type arg]
-	  (assoc-in this [:filters type] arg))
+          (assoc this :filters (conj (:filters this) [type arg])))
   (page [#^HBaseConstraints this size]
 	(assoc this :page size)))
 
@@ -219,7 +218,11 @@
 	 (encode-family schema family)
 	 (encode-column schema family qualifier)
 	 (lookup-compare compare)
-	 (as-comparator compare (encode-cell schema family qualifier value)))
+         (cond
+	  (or (= (first compare) :regex) (= (first compare) :substr))
+	  (as-comparator compare value)
+	  :else
+	  (as-comparator compare (encode-cell schema family qualifier value))))
     (.setFilterIfMissing true)))
 			     
 (defmethod make-filter :cell
@@ -239,22 +242,45 @@
   [schema [type size]]
   (PageFilter. (long size)))
 
+(defmethod make-filter :all
+  [schema [type flist]]
+  (let [filters (map (partial make-filter schema) flist)]
+    (FilterList. FilterList$Operator/MUST_PASS_ALL filters)))
+
+(defmethod make-filter :or
+  [schema [type flist]]
+  (let [filters (map (partial make-filter schema) flist)]
+    (FilterList. FilterList$Operator/MUST_PASS_ONE filters)))
+
 ;;
 ;; Turn constraint specs into HBase objects
 ;;
 
-(defn filter-list [list]
-  (FilterList. FilterList$Operator/MUST_PASS_ALL list))
+(defn filter-list [list combine-op]
+  (cond
+   (= combine-op :all)
+   (FilterList. FilterList$Operator/MUST_PASS_ALL list)
+   (= combine-op :any)
+   (FilterList. FilterList$Operator/MUST_PASS_ONE list)))
 
 (defn constrain-op [op schema #^HBaseConstraints c]
   (let [flist (map (partial make-filter schema)
 		   (:filters c))]
     (assert (every? #(not (nil? %)) flist))
-    (.setFilter op (filter-list flist))
+    (.setFilter op (filter-list flist :all))
     (doall
      (map (partial apply-project op schema)
 	  (:projections c)))
     op))
 
- 
+;; (defn combine-filters 
+;;   [schema combine-op & filters]
+;;   (let [flist (map (partial make-filter schema) filters)]
+;;     (when (= combine-op :or)
+;;       (FilterList. FilterList$Operator/MUST_PASS_ONE flist))
+;;     (when (= combine-op :and)
+;;       (FilterList. FilterList$Operator/MUST_PASS_ALL flist))))
+
+
+
  
