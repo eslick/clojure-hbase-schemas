@@ -5,7 +5,7 @@
   (:import org.apache.hadoop.hbase.util.Bytes
 	   org.apache.hadoop.hbase.HBaseConfiguration
 	   org.apache.hadoop.conf.Configuration
-	   [org.apache.hadoop.hbase.client HTablePool HTable
+	   [org.apache.hadoop.hbase.client HTablePool HTable HTablePool$PooledHTable
 	    HTable$ClientScanner Get Put Increment Delete Scan HConnectionManager]
 	   [java.util.concurrent ThreadPoolExecutor ArrayBlockingQueue TimeUnit]))
 
@@ -41,7 +41,8 @@
    (.getTable (table-pool) (encode-value table-name :string))))
 
 (defn as-table [ref]
-  (if (= (type ref) HTable)
+  (if (or (= (type ref) HTable)
+          (= (type ref) HTablePool$PooledHTable))
     ref
     (table (name ref))))
 
