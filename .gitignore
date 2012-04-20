@@ -3,3 +3,5 @@ Manifest.txt
 clojure-hbase.jar
 lib
 classes
+/*.jar
+/pom.xml

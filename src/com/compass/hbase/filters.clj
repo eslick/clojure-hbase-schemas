@@ -1,7 +1,6 @@
 (ns com.compass.hbase.filters
   (:refer-clojure :exclude [filter])
-  (:use clojure.contrib.def
-	com.compass.hbase.schema)
+  (:use com.compass.hbase.schema)
   (:require [clj-time.core :as time])
   (:import
    [org.apache.hadoop.hbase.client Get Scan]
