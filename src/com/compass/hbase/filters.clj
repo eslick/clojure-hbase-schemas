@@ -3,6 +3,7 @@
   (:use com.compass.hbase.schema)
   (:require [clj-time.core :as time])
   (:import
+   org.apache.hadoop.hbase.util.Bytes
    [org.apache.hadoop.hbase.client Get Scan]
    [org.apache.hadoop.hbase.filter
     ;; Base classes
@@ -182,8 +183,8 @@
     (case (first compare)
 	  :binary (BinaryComparator. value)
 	  :prefix (BinaryPrefixComparator. value)
-	  :regex (RegexStringComparator. value)
-	  :substr (SubstringComparator. value))
+	  :regex (RegexStringComparator. (Bytes/toString value))
+	  :substr (SubstringComparator. (Bytes/toString value)))
     (BinaryComparator. value)))
 
 (defmulti make-filter (fn [schema [type & args]] type))
