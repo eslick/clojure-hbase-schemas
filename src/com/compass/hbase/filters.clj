@@ -212,7 +212,8 @@
 		    (as-comparator compare (encode-column schema family qual-value))))
 	   
 (defmethod make-filter :column
-  [schema [type [compare [family qualifier value]]]]
+  [schema [type [compare [family qualifier value & {:keys [filter-missing]
+                                                    :or {filter-missing true}}]]]]
   (doto (SingleColumnValueFilter.
 	 (encode-family schema family)
 	 (encode-column schema family qualifier)
@@ -222,7 +223,7 @@
 	  (as-comparator compare value)
 	  :else
 	  (as-comparator compare (encode-cell schema family qualifier value))))
-    (.setFilterIfMissing true)))
+    (.setFilterIfMissing filter-missing)))
 			     
 (defmethod make-filter :cell
   [schema [type [compare [value encoding]]]]
