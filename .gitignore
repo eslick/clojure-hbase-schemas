@@ -6,3 +6,5 @@ classes
 /*.jar
 /pom.xml
 /.lein-deps-sum
+/.nrepl-port
+/target/

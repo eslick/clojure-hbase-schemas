@@ -161,17 +161,18 @@
   (fn [value type] type))
 
 ;; Primitives
-(defmethod encode-value :keyword [arg type] (Bytes/toBytes (name arg)))
-(defmethod encode-value :symbol [arg type] (Bytes/toBytes (name arg)))
-(defmethod encode-value :string [arg type]
-	   (assert (or (symbol? arg) (keyword? arg) (string? arg)))
-	   (Bytes/toBytes (name arg)))
-(defmethod encode-value :bool [arg type] (Bytes/toBytes (boolean arg)))
-(defmethod encode-value :long [arg type] (Bytes/toBytes (long arg)))
-(defmethod encode-value :int [arg type] (Bytes/toBytes (int arg)))
-(defmethod encode-value :float [arg type] (Bytes/toBytes (float arg)))
-(defmethod encode-value :double [arg type] (Bytes/toBytes (double arg)))
-(defmethod encode-value :raw [arg type] arg)
+(defmethod encode-value :keyword [arg typ] (Bytes/toBytes (name arg)))
+(defmethod encode-value :symbol [arg typ] (Bytes/toBytes (name arg)))
+(defmethod encode-value :string [arg typ]
+  (assert (or (symbol? arg) (keyword? arg) (string? arg))
+          (str "Wrong value: type='" (type arg) "', val='" arg "'"))
+  (Bytes/toBytes (name arg)))
+(defmethod encode-value :bool [arg typ] (Bytes/toBytes (boolean arg)))
+(defmethod encode-value :long [arg typ] (Bytes/toBytes (long arg)))
+(defmethod encode-value :int [arg typ] (Bytes/toBytes (int arg)))
+(defmethod encode-value :float [arg typ] (Bytes/toBytes (float arg)))
+(defmethod encode-value :double [arg typ] (Bytes/toBytes (double arg)))
+(defmethod encode-value :raw [arg typ] arg)
 
 ;; Aggregates
 ;;(defmethod encode-value :ser [arg type] (ser/serialize arg))

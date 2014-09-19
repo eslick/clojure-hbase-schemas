@@ -183,8 +183,8 @@
     (case (first compare)
 	  :binary (BinaryComparator. value)
 	  :prefix (BinaryPrefixComparator. value)
-	  :regex (RegexStringComparator. (Bytes/toString value))
-	  :substr (SubstringComparator. (Bytes/toString value)))
+	  :regex (RegexStringComparator. (if (string? value) value (Bytes/toString value)))
+	  :substr (SubstringComparator. (if (string? value) value (Bytes/toString value))))
     (BinaryComparator. value)))
 
 (defmulti make-filter (fn [schema [type & args]] type))
