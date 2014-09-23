@@ -165,7 +165,7 @@
 (defmethod encode-value :symbol [arg typ] (Bytes/toBytes (name arg)))
 (defmethod encode-value :string [arg typ]
   (assert (or (symbol? arg) (keyword? arg) (string? arg))
-          (str "Wrong value: type='" (type arg) "', val='" arg "'"))
+          (str "Wrong value: type='" (type arg) "', val='" arg "', typ='" typ "'"))
   (Bytes/toBytes (name arg)))
 (defmethod encode-value :bool [arg typ] (Bytes/toBytes (boolean arg)))
 (defmethod encode-value :long [arg typ] (Bytes/toBytes (long arg)))
@@ -252,11 +252,9 @@
 					 (qualifier-type schema family)))
 	       timestamp (.getTimestamp kv)
 	       value (let [value (.getValue kv)]
-		       (if (> (count value) 0)
-			 (with-robust-decode [:keyword result]
-			   (decode-value (.getValue kv)
-					 (value-type schema family qualifier)))
-			 nil))]
+                       (with-robust-decode [:keyword result]
+                         (decode-value (.getValue kv)
+                                       (value-type schema family qualifier))))]
 	   (recur (next kvs)
 		  (assoc-in kv-map [family qualifier timestamp] value)))
 	 kv-map))]))
@@ -288,8 +286,6 @@
 	       (recur (next remaining-keys)
 		      (assoc-in kv-map [keyfam qual]
 				(let [value (.getValue result family qualifier)]
-				  (if (> (count value) 0)
-				    (with-robust-decode [:cell result]
-				      (decode-value value (value-type schema keyfam qual)))
-				    nil)))))
+                                  (with-robust-decode [:cell result]
+                                    (decode-value value (value-type schema keyfam qual)))))))
 	     kv-map))))]))
