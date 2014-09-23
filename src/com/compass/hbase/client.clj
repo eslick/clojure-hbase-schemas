@@ -326,7 +326,7 @@
    collecting them (presumably for side effects)"
   ([fn table constraints]
      (with-table [table table]
-       (let [schema (get-schema table)
+       (let [schema (table-schema table)
 	     scan (make-scan schema constraints)
 	     scanner (io! (.getScanner table scan))]
 	 (doseq [result scanner]
@@ -340,7 +340,7 @@
    The function can filter results by returning nil"
   ([fn table constraints]
      (with-table [table table]
-       (let [schema (get-schema table)
+       (let [schema (table-schema table)
 	     scan (make-scan schema constraints)
 	     scanner (io! (.getScanner table scan))
 	     results (doall
