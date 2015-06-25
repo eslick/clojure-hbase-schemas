@@ -6,7 +6,7 @@
 	   org.apache.hadoop.hbase.HBaseConfiguration
 	   org.apache.hadoop.conf.Configuration
 	   [org.apache.hadoop.hbase.client HTablePool HTable HTablePool$PooledHTable
-	    HTable$ClientScanner Get Put Increment Delete Scan HConnectionManager]
+	    Get Put Increment Delete Scan HConnectionManager]
 	   [java.util.concurrent ThreadPoolExecutor ArrayBlockingQueue TimeUnit]))
 
 ;; ====================================

@@ -8,3 +8,4 @@ classes
 /.lein-deps-sum
 /.nrepl-port
 /target/
+/.lein-repl-history
