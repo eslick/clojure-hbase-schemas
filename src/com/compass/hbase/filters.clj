@@ -1,9 +1,9 @@
 (ns com.compass.hbase.filters
   (:refer-clojure :exclude [filter])
-  (:use clojure.contrib.def
-	com.compass.hbase.schema)
+  (:use com.compass.hbase.schema)
   (:require [clj-time.core :as time])
   (:import
+   org.apache.hadoop.hbase.util.Bytes
    [org.apache.hadoop.hbase.client Get Scan]
    [org.apache.hadoop.hbase.filter
     ;; Base classes
@@ -183,8 +183,8 @@
     (case (first compare)
 	  :binary (BinaryComparator. value)
 	  :prefix (BinaryPrefixComparator. value)
-	  :regex (RegexStringComparator. value)
-	  :substr (SubstringComparator. value))
+	  :regex (RegexStringComparator. (if (string? value) value (Bytes/toString value)))
+	  :substr (SubstringComparator. (if (string? value) value (Bytes/toString value))))
     (BinaryComparator. value)))
 
 (defmulti make-filter (fn [schema [type & args]] type))
@@ -213,7 +213,8 @@
 		    (as-comparator compare (encode-column schema family qual-value))))
 	   
 (defmethod make-filter :column
-  [schema [type [compare [family qualifier value]]]]
+  [schema [type [compare [family qualifier value & {:keys [filter-missing]
+                                                    :or {filter-missing true}}]]]]
   (doto (SingleColumnValueFilter.
 	 (encode-family schema family)
 	 (encode-column schema family qualifier)
@@ -223,7 +224,7 @@
 	  (as-comparator compare value)
 	  :else
 	  (as-comparator compare (encode-cell schema family qualifier value))))
-    (.setFilterIfMissing true)))
+    (.setFilterIfMissing filter-missing)))
 			     
 (defmethod make-filter :cell
   [schema [type [compare [value encoding]]]]

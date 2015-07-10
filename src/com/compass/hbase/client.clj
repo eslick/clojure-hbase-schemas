@@ -5,8 +5,8 @@
   (:import org.apache.hadoop.hbase.util.Bytes
 	   org.apache.hadoop.hbase.HBaseConfiguration
 	   org.apache.hadoop.conf.Configuration
-	   [org.apache.hadoop.hbase.client HTablePool HTable
-	    HTable$ClientScanner Get Put Increment Delete Scan HConnectionManager]
+	   [org.apache.hadoop.hbase.client HTablePool HTable HTablePool$PooledHTable
+	    Get Put Increment Delete Scan HConnectionManager]
 	   [java.util.concurrent ThreadPoolExecutor ArrayBlockingQueue TimeUnit]))
 
 ;; ====================================
@@ -41,7 +41,8 @@
    (.getTable (table-pool) (encode-value table-name :string))))
 
 (defn as-table [ref]
-  (if (= (type ref) HTable)
+  (if (or (= (type ref) HTable)
+          (= (type ref) HTablePool$PooledHTable))
     ref
     (table (name ref))))
 
@@ -325,7 +326,7 @@
    collecting them (presumably for side effects)"
   ([fn table constraints]
      (with-table [table table]
-       (let [schema (get-schema table)
+       (let [schema (table-schema table)
 	     scan (make-scan schema constraints)
 	     scanner (io! (.getScanner table scan))]
 	 (doseq [result scanner]
@@ -339,7 +340,7 @@
    The function can filter results by returning nil"
   ([fn table constraints]
      (with-table [table table]
-       (let [schema (get-schema table)
+       (let [schema (table-schema table)
 	     scan (make-scan schema constraints)
 	     scanner (io! (.getScanner table scan))
 	     results (doall

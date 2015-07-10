@@ -3,3 +3,9 @@ Manifest.txt
 clojure-hbase.jar
 lib
 classes
+/*.jar
+/pom.xml
+/.lein-deps-sum
+/.nrepl-port
+/target/
+/.lein-repl-history
